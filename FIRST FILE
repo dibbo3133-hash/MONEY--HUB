@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Hub - Smart Shop Management</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Hind Siliguri & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        .voice-pulse::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            background-color: #ef4444;
+            animation: pulse-ring 1.5s infinite;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Custom Notification / Toast Box -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Custom Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-95 opacity-0">
+            <!-- Dynamic Modal Content -->
+        </div>
+    </div>
+
+    <!-- ==================== 1. LOGIN / SHOP ACCESS SCREEN ==================== -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-900 via-slate-900 to-emerald-950">
+        <div class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl max-w-md w-full p-8 border border-white/20">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-emerald-500 rounded-2xl mx-auto flex items-center justify-center text-white text-3xl shadow-lg mb-4">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Money Hub</h1>
+                <p class="text-slate-500 text-sm mt-1">স্মার্ট দোকান ও হিসাব ব্যবস্থাপনা সফটওয়্যার</p>
+            </div>
+
+            <!-- Tabs for New Shop vs Existing Code -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+                <button onclick="switchAuthTab('new')" id="tab-new" class="py-2.5 text-sm font-semibold rounded-lg bg-white text-indigo-600 shadow-sm transition">নতুন দোকান রেজিস্ট্রেশন</button>
+                <button onclick="switchAuthTab('code')" id="tab-code" class="py-2.5 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">কোড দিয়ে লগইন</button>
+            </div>
+
+            <!-- New Shop Registration Form -->
+            <form id="form-new-shop" onsubmit="handleNewShop(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">দোকানের নাম</label>
+                    <input type="text" id="reg-shop-name" required placeholder="যেমন: ভাই ভাই স্টোর" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">মোবাইল নাম্বার</label>
+                    <input type="tel" id="reg-phone" required placeholder="017XXXXXXXX" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">সিকিউরিটি পিন (ভুল এন্ট্রি ডিলিট করার জন্য)</label>
+                    <input type="password" id="reg-pin" required maxlength="4" pattern="\d{4}" placeholder="৪ সংখ্যার পিন (যেমন: 1234)" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition flex items-center justify-center gap-2">
+                    <span>কোড তৈরি করুন ও প্রবেশ করুন</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <!-- Login with Management Code Form -->
+            <form id="form-code-login" onsubmit="handleCodeLogin(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">App Management Code দিন</label>
+                    <input type="text" id="login-shop-code" required placeholder="যেমন: MH-8492" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none uppercase font-mono text-center text-lg tracking-widest">
+                </div>
+                <p class="text-xs text-slate-500 text-center">নতুন বা পুরনো যেকোনো মোবাইলে এই কোড ব্যবহার করে দোকানের সব তথ্য ওপেন করতে পারবেন।</p>
+                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-unlock-keyhole"></i>
+                    <span>দোকান ওপেন করুন</span>
+                </button>
+                <div class="pt-2 text-center">
+                    <button type="button" onclick="loadDemoShop()" class="text-xs text-indigo-600 font-semibold hover:underline">ডেমো দোকান (Code: MH-DEMO) দিয়ে টেস্ট করুন</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== 2. MAIN APPLICATION SCREEN ==================== -->
+    <div id="app-screen" class="hidden min-h-screen flex flex-col">
+        
+        <!-- Top Navigation Header -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <!-- Brand & Shop Info -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 id="header-shop-name" class="font-bold text-lg text-slate-900 leading-none">Money Hub</h1>
+                            <span id="header-shop-code" onclick="copyShopCode()" title="কপি করতে ক্লিক করুন" class="cursor-pointer px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-xs font-mono font-bold flex items-center gap-1">
+                                <span>MH-DEMO</span> <i class="fa-regular fa-copy"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">সিকিউরিটি পিন: <span class="font-mono font-semibold" id="header-pin-hint">****</span></p>
+                    </div>
+                </div>
+
+                <!-- Fix vs Unfix Price Mode Toggle (Crucial Feature from Note) -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button onclick="setPriceMode('fix')" id="btn-mode-fix" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow">
+                        <i class="fa-solid fa-lock"></i> Price Fix (এক দর)
+                    </button>
+                    <button onclick="setPriceMode('unfix')" id="btn-mode-unfix" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-sliders"></i> Unfix (দামাদামি)
+                    </button>
+                </div>
+
+                <!-- Low Stock Alert Bell & Logout -->
+                <div class="flex items-center gap-2">
+                    <button onclick="switchTab('alerts')" class="relative p-2.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 transition" title="কম স্টক অ্যালার্ট">
+                        <i class="fa-solid fa-bell"></i>
+                        <span id="alert-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+                    </button>
+                    <button onclick="logoutShop()" class="p-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 transition" title="লগআউট">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto gap-1 border-t border-slate-100 pt-1">
+                <button onclick="switchTab('pos')" id="nav-pos" class="nav-btn px-4 py-2.5 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register"></i> বিক্রি ও হিসাব (POS)
+                </button>
+                <button onclick="switchTab('inventory')" id="nav-inventory" class="nav-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked"></i> প্রোডাক্ট ও স্টক
+                </button>
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> চার্ট ও জনপ্রিয়তা
+                </button>
+                <button onclick="switchTab('alerts')" id="nav-alerts" class="nav-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i> স্টক অ্যালার্ট
+                </button>
+                <button onclick="switchTab('summary')" id="nav-summary" class="nav-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Summary (মোট হিসাব)
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Container -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 space-y-6">
+
+            <!-- ==================== TAB 1: POS & SALES TABLE ==================== -->
+            <section id="view-pos" class="space-y-6">
+                
+                <!-- Mode Info Banner -->
+                <div id="mode-banner" class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-indigo-600"></i>
+                        <span id="mode-banner-text"><strong>Price Fix মোড চালু আছে:</strong> আগে থেকে সেট করা দামে সরাসরি বিক্রি হবে।</span>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-0.5 bg-white rounded border border-indigo-200">Active Mode</span>
+                </div>
+
+                <!-- Quick Sell & Action Bar (Scan, Voice, Product Select) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left: Sell Input Card -->
+                    <div class="lg:col-span-5 glass-card rounded-2xl p-5 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-cart-plus text-indigo-600"></i> প্রোডাক্ট বিক্রি করুন
+                            </h2>
+                            <!-- Scan & Voice Buttons -->
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="openScannerModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition">
+                                    <i class="fa-solid fa-camera"></i> Scan (স্ক্যান)
+                                </button>
+                                <button type="button" id="voice-btn" onclick="startVoiceRecognition()" class="relative px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition">
+                                    <i class="fa-solid fa-microphone"></i> Voice
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Search / Select Product -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">প্রোডাক্ট বা কোড নির্বাচন করুন</label>
+                            <div class="relative">
+                                <input type="text" id="pos-search-input" oninput="filterPosProducts()" placeholder="প্রোডাক্টের নাম বা কোড লিখুন অথবা Voice বলুন..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                            </div>
+                            <!-- Dropdown / Quick Pills -->
+                            <div id="pos-product-pills" class="flex flex-wrap gap-1.5 mt-2 max-h-28 overflow-y-auto p-1">
+                                <!-- Filled by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Selected Product Details Box -->
+                        <div id="selected-product-box" class="hidden p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                                <div class="flex items-center gap-3">
+                                    <div id="sel-prod-icon" class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl">
+                                        📦
+                                    </div>
+                                    <div>
+                                        <h3 id="sel-prod-name" class="font-bold text-slate-900">Product Name</h3>
+                                        <p class="text-xs text-slate-500">কোড: <span id="sel-prod-code" class="font-mono font-bold text-slate-700">P01</span> | স্টক আছে: <span id="sel-prod-stock" class="font-bold text-emerald-600">10</span> পিচ</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">কেনা দাম ( গোপন )</span>
+                                    <span id="sel-prod-buy" class="font-mono font-bold text-slate-600">৳ 0</span>
+                                </div>
+                            </div>
+
+                            <!-- Quantity, Selling Price & Extra Expense -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">পরিমাণ (Pic)</label>
+                                    <input type="number" id="sell-qty" value="1" min="1" oninput="checkLossWarning()" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-center outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">বিক্রি দাম (প্রতি পিচ)</label>
+                                    <input type="number" id="sell-price" oninput="checkLossWarning()" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-center outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">খরচ (যদি থাকে)</label>
+                                    <input type="number" id="sell-expense" value="0" min="0" oninput="checkLossWarning()" class="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-center outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+
+                            <!-- Loss Warning Alert (From Note: কেনা দামের কম বা সমান হলে Warning দিবে) -->
+                            <div id="loss-warning-box" class="hidden p-2.5 rounded-lg bg-red-50 border border-red-300 text-red-700 text-xs flex items-center gap-2 animate-pulse">
+                                <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                                <span><strong>সতর্কতা (Warning):</strong> আপনি কেনা দামের সমান বা তার চেয়ে কম দামে বিক্রি করছেন! এতে লস (Loss) হবে।</span>
+                            </div>
+
+                            <button type="button" onclick="confirmSale()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check-circle"></i>
+                                <span>বিক্রি সম্পন্ন করুন (Sold)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Exact Table Structure from User's Notebook -->
+                    <div class="lg:col-span-7 glass-card rounded-2xl p-5 shadow-sm flex flex-col">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-table-list text-emerald-600"></i> বিক্রির তালিকা (Sales List)
+                                </h2>
+                                <p class="text-xs text-slate-500">কোডে ক্লিক করলে প্রোডাক্টের ছবি, স্টক ও জনপ্রিয়তা চার্ট দেখা যাবে।</p>
+                            </div>
+                            <span class="text-xs bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-lg font-semibold">
+                                * লাল রঙ = লস বা কেনা দামে বিক্রি
+                            </span>
+                        </div>
+
+                        <!-- Notebook Table: Pic | Product name | Code | Buying Prize | Selling Prize | Profit/Lose | খরচ | Time -->
+                        <div class="overflow-x-auto flex-1 border border-slate-200 rounded-xl">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-800 text-white text-xs uppercase">
+                                        <th class="p-2.5 border-r border-slate-700">Pic</th>
+                                        <th class="p-2.5 border-r border-slate-700">Product Name</th>
+                                        <th class="p-2.5 border-r border-slate-700">Code</th>
+                                        <th class="p-2.5 border-r border-slate-700">Buying Prize</th>
+                                        <th class="p-2.5 border-r border-slate-700">Selling Prize</th>
+                                        <th class="p-2.5 border-r border-slate-700">Profit/Lose</th>
+                                        <th class="p-2.5 border-r border-slate-700">খরচ</th>
+                                        <th class="p-2.5 border-r border-slate-700">Time</th>
+                                        <th class="p-2.5 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sales-table-body" class="divide-y divide-slate-200 bg-white">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 2: INVENTORY & ADD PRODUCT ==================== -->
+            <section id="view-inventory" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Add New Product Form -->
+                    <div class="glass-card rounded-2xl p-6 shadow-sm">
+                        <h2 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-indigo-600"></i> নতুন প্রোডাক্ট যোগ করুন
+                        </h2>
+                        <form onsubmit="handleAddProduct(event)" class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">প্রোডাক্টের নাম</label>
+                                <input type="text" id="new-prod-name" required placeholder="যেমন: Miniket Rice 5kg" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 outline-none focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">মডেল / কোড (Code)</label>
+                                    <input type="text" id="new-prod-code" required placeholder="যেমন: MR-01" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 uppercase font-mono outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">স্টক পরিমাণ (Pic)</label>
+                                    <input type="number" id="new-prod-stock" required min="1" placeholder="20" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">কেনা দাম (Buying)</label>
+                                    <input type="number" id="new-prod-buy" required min="1" placeholder="320" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">নির্ধারিত বিক্রি দাম</label>
+                                    <input type="number" id="new-prod-sell" required min="1" placeholder="360" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">আইকন / ছবি নির্বাচন</label>
+                                <select id="new-prod-icon" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 outline-none focus:border-indigo-500 bg-white">
+                                    <option value="📦">📦 সাধারণ পণ্য (Box)</option>
+                                    <option value="🌾">🌾 চাল / ডাল / খাদ্য (Grain)</option>
+                                    <option value="🧴">🧴 তেল / কসমেটিক্স (Bottle)</option>
+                                    <option value="👕">👕 পোশাক / কাপড় (Shirt)</option>
+                                    <option value="📱">📱 মোবাইল / গ্যাজেট (Gadget)</option>
+                                    <option value="👟">👟 জুতা / ব্যাগ (Shoes)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">
+                                স্টকে যুক্ত করুন
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Product Stock List -->
+                    <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-sm">
+                        <h2 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-warehouse text-emerald-600"></i> বর্তমান স্টক তালিকা (ক্লিক করে বিস্তারিত দেখুন)
+                        </h2>
+                        <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 3: ANALYTICS & POPULARITY CHARTS ==================== -->
+            <section id="view-analytics" class="hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Sales Time Chart (কখন বেশি Sale হয়েছে) -->
+                    <div class="glass-card rounded-2xl p-6 shadow-sm">
+                        <h2 class="font-bold text-lg text-slate-800 mb-1">সময় অনুযায়ী বিক্রির চার্ট (Sales Trend)</h2>
+                        <p class="text-xs text-slate-500 mb-4">কোন সময়ে বেশি বিক্রি হয়েছে তা এই চার্টে দেখা যাচ্ছে।</p>
+                        <div class="h-64">
+                            <canvas id="salesTimeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Product Popularity Chart -->
+                    <div class="glass-card rounded-2xl p-6 shadow-sm">
+                        <h2 class="font-bold text-lg text-slate-800 mb-1">প্রোডাক্ট জনপ্রিয়তা চার্ট (Popularity)</h2>
+                        <p class="text-xs text-slate-500 mb-4">কোন প্রোডাক্ট কত পিস বিক্রি হয়েছে তার তুলনা।</p>
+                        <div class="h-64">
+                            <canvas id="popularityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ranked Code List (From Note: যে Product এর Sale বেশি সেটির Code তালিকার সবার উপরে রাখা যাবে) -->
+                <div class="glass-card rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 class="font-bold text-lg text-slate-800">গুরুত্বপূর্ণ ও সর্বাধিক বিক্রিত প্রোডাক্ট র‍্যাঙ্কিং</h2>
+                            <p class="text-xs text-slate-500">যে প্রোডাক্টের বিক্রি বেশি তার কোড স্বয়ংক্রিয়ভাবে তালিকার সবার উপরে রাখা হয়েছে।</p>
+                        </div>
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">Top Selling First</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 text-xs uppercase">
+                                    <th class="p-3 rounded-tl-lg">র‍্যাঙ্ক</th>
+                                    <th class="p-3">Product Code</th>
+                                    <th class="p-3">প্রোডাক্টের নাম</th>
+                                    <th class="p-3">মোট বিক্রি (Sold)</th>
+                                    <th class="p-3">বর্তমান স্টক</th>
+                                    <th class="p-3 rounded-tr-lg">গুরুত্ব / অবস্থা</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ranking-table-body" class="divide-y divide-slate-200">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 4: LOW STOCK ALERTS ==================== -->
+            <section id="view-alerts" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-xl text-slate-900">কম স্টক অ্যালার্ট নোটিফিকেশন (Low Stock Alert)</h2>
+                            <p class="text-sm text-slate-500">যেসব প্রোডাক্ট ৫ পিস বা তার কম আছে, সেগুলোর সতর্কবার্তা নিচে দেখানো হচ্ছে।</p>
+                        </div>
+                    </div>
+                    <div id="low-stock-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== TAB 5: SUMMARY & AIM REPORT ==================== -->
+            <section id="view-summary" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-6">
+                        <div>
+                            <h2 class="font-bold text-2xl text-slate-900">দোকানের সামগ্রিক হিসাব (Summary & Aim)</h2>
+                            <p class="text-sm text-slate-500">যেকোনো সময়ে এক ক্লিকে মোট বিক্রি, লাভ/লস এবং সেরা প্রোডাক্ট দেখুন।</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="filterSummary('today')" id="sum-btn-today" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow">আজকের হিসাব</button>
+                            <button onclick="filterSummary('all')" id="sum-btn-all" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">সর্বমোট হিসাব</button>
+                        </div>
+                    </div>
+
+                    <!-- Summary KPI Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg">
+                            <p class="text-xs uppercase font-semibold opacity-80">মোট বিক্রি (Total Sale)</p>
+                            <h3 id="sum-total-sale" class="text-3xl font-bold mt-1">৳ 0</h3>
+                            <p id="sum-total-pics" class="text-xs mt-2 opacity-90">মোট ০ পিস পণ্য বিক্রি হয়েছে</p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-lg">
+                            <p class="text-xs uppercase font-semibold opacity-80">নিট লাভ / লস (Profit / Loss)</p>
+                            <h3 id="sum-net-profit" class="text-3xl font-bold mt-1">৳ 0</h3>
+                            <p id="sum-profit-status" class="text-xs mt-2 opacity-90">খরচ বাদ দিয়ে নিট হিসাব</p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-600 text-white shadow-lg">
+                            <p class="text-xs uppercase font-semibold opacity-80">মোট অতিরিক্ত খরচ</p>
+                            <h3 id="sum-total-expense" class="text-3xl font-bold mt-1">৳ 0</h3>
+                            <p class="text-xs mt-2 opacity-90">বিক্রয়কালীন আনুষঙ্গিক খরচ</p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 text-white shadow-lg">
+                            <p class="text-xs uppercase font-semibold opacity-80">সবথেকে বেশি বিক্রি প্রোডাক্ট</p>
+                            <h3 id="sum-top-product" class="text-xl font-bold mt-1 truncate">নেই</h3>
+                            <p id="sum-top-count" class="text-xs mt-2 opacity-90">০ পিস বিক্রি হয়েছে</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // ==================== STATE MANAGEMENT & INITIAL DATA ====================
+        const DEFAULT_DEMO_DATA = {
+            shopName: "ভাই ভাই ডিজিটাল স্টোর",
+            shopCode: "MH-DEMO",
+            phone: "01700000000",
+            pin: "1234",
+            priceMode: "fix", // 'fix' or 'unfix'
+            products: [
+                { id: 1, code: "MR-01", name: "মিনিকেট চাল (৫ কেজি)", buyPrice: 320, sellPrice: 360, stock: 18, soldCount: 24, icon: "🌾" },
+                { id: 2, code: "SO-02", name: "সয়াবিন তেল (৫ লিটার)", buyPrice: 780, sellPrice: 820, stock: 4, soldCount: 35, icon: "🧴" },
+                { id: 3, code: "TS-03", name: "প্রিমিয়াম কটন টি-শার্ট", buyPrice: 250, sellPrice: 350, stock: 12, soldCount: 15, icon: "👕" },
+                { id: 4, code: "HP-04", name: "ওয়্যারলেস হেডফোন", buyPrice: 600, sellPrice: 750, stock: 3, soldCount: 19, icon: "📱" },
+                { id: 5, code: "SG-05", name: "চিনি প্যাকেট (১ কেজি)", buyPrice: 125, sellPrice: 135, stock: 25, soldCount: 40, icon: "📦" }
+            ],
+            sales: [
+                { id: 101, pic: 2, productName: "সয়াবিন তেল (৫ লিটার)", code: "SO-02", buyPrice: 780, sellPrice: 820, expense: 10, time: "10:15 AM", date: new Date().toDateString() },
+                { id: 102, pic: 1, productName: "প্রিমিয়াম কটন টি-শার্ট", code: "TS-03", buyPrice: 250, sellPrice: 240, expense: 0, time: "11:30 AM", date: new Date().toDateString() }, // Loss example (Red)
+                { id: 103, pic: 3, productName: "চিনি প্যাকেট (১ কেজি)", code: "SG-05", buyPrice: 125, sellPrice: 135, expense: 0, time: "12:45 PM", date: new Date().toDateString() }
+            ]
+        };
+
+        let currentShop = null;
+        let selectedProduct = null;
+        let salesTimeChartInstance = null;
+        let popularityChartInstance = null;
+
+        // ==================== INITIALIZATION ====================
+        window.onload = function() {
+            // Ensure demo shop exists in localStorage
+            if (!localStorage.getItem("moneyhub_MH-DEMO")) {
+                localStorage.setItem("moneyhub_MH-DEMO", JSON.stringify(DEFAULT_DEMO_DATA));
+            }
+            // Check active session
+            const activeCode = sessionStorage.getItem("moneyhub_active_code");
+            if (activeCode) {
+                const saved = localStorage.getItem("moneyhub_" + activeCode);
+                if (saved) {
+                    currentShop = JSON.parse(saved);
+                    openAppScreen();
+                }
+            }
+        };
+
+        function saveShopData() {
+            if (currentShop) {
+                localStorage.setItem("moneyhub_" + currentShop.shopCode, JSON.stringify(currentShop));
+            }
+        }
+
+        // ==================== AUTHENTICATION & SHOP CODE ====================
+        function switchAuthTab(tab) {
+            const newForm = document.getElementById("form-new-shop");
+            const codeForm = document.getElementById("form-code-login");
+            const tabNew = document.getElementById("tab-new");
+            const tabCode = document.getElementById("tab-code");
+
+            if (tab === 'new') {
+                newForm.classList.remove("hidden");
+                codeForm.classList.add("hidden");
+                tabNew.className = "py-2.5 text-sm font-semibold rounded-lg bg-white text-indigo-600 shadow-sm transition";
+                tabCode.className = "py-2.5 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            } else {
+                newForm.classList.add("hidden");
+                codeForm.classList.remove("hidden");
+                tabCode.className = "py-2.5 text-sm font-semibold rounded-lg bg-white text-emerald-600 shadow-sm transition";
+                tabNew.className = "py-2.5 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            }
+        }
+
+        function handleNewShop(e) {
+            e.preventDefault();
+            const shopName = document.getElementById("reg-shop-name").value.trim();
+            const phone = document.getElementById("reg-phone").value.trim();
+            const pin = document.getElementById("reg-pin").value.trim();
+
+            // Generate unique Management Code
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            const generatedCode = "MH-" + randomNum;
+
+            currentShop = {
+                shopName,
+                shopCode: generatedCode,
+                phone,
+                pin,
+                priceMode: "fix",
+                products: [
+                    { id: 1, code: "P-101", name: "নমুনা প্রোডাক্ট ১", buyPrice: 100, sellPrice: 120, stock: 15, soldCount: 5, icon: "📦" }
+                ],
+                sales: []
+            };
+
+            saveShopData();
+            sessionStorage.setItem("moneyhub_active_code", generatedCode);
+
+            // Show generated code popup
+            showModal(`
+                <div class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center text-3xl">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900">দোকান সফলভাবে তৈরি হয়েছে!</h3>
+                    <p class="text-sm text-slate-600">আপনার App Management Code নিচে দেওয়া হলো। এই কোড দিয়ে যেকোনো মোবাইলে লগইন করতে পারবেন:</p>
+                    <div class="p-3 bg-slate-100 rounded-xl font-mono text-2xl font-bold text-indigo-700 tracking-widest border border-slate-300">
+                        ${generatedCode}
+                    </div>
+                    <button onclick="closeModal(); openAppScreen();" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow">
+                        অ্যাপে প্রবেশ করুন
+                    </button>
+                </div>
+            `);
+        }
+
+        function handleCodeLogin(e) {
+            e.preventDefault();
+            const code = document.getElementById("login-shop-code").value.trim().toUpperCase();
+            const saved = localStorage.getItem("moneyhub_" + code);
+            if (saved) {
+                currentShop = JSON.parse(saved);
+                sessionStorage.setItem("moneyhub_active_code", code);
+                openAppScreen();
+                showToast("সফলভাবে দোকানে প্রবেশ করেছেন!", "success");
+            } else {
+                showToast("ভুল কোড! দয়া করে সঠিক App Management Code দিন।", "error");
+            }
+        }
+
+        function loadDemoShop() {
+            document.getElementById("login-shop-code").value = "MH-DEMO";
+            const saved = localStorage.getItem("moneyhub_MH-DEMO");
+            currentShop = JSON.parse(saved);
+            sessionStorage.setItem("moneyhub_active_code", "MH-DEMO");
+            openAppScreen();
+            showToast("ডেমো দোকানে (পিন: 1234) স্বাগতম!", "success");
+        }
+
+        function logoutShop() {
+            sessionStorage.removeItem("moneyhub_active_code");
+            currentShop = null;
+            document.getElementById("app-screen").classList.add("hidden");
+            document.getElementById("auth-screen").classList.remove("hidden");
+        }
+
+        function openAppScreen() {
+            document.getElementById("auth-screen").classList.add("hidden");
+            document.getElementById("app-screen").classList.remove("hidden");
+
+            document.getElementById("header-shop-name").innerText = currentShop.shopName;
+            document.getElementById("header-shop-code").innerHTML = `<span>${currentShop.shopCode}</span> <i class="fa-regular fa-copy"></i>`;
+            
+            setPriceMode(currentShop.priceMode || 'fix', false);
+            refreshAllViews();
+        }
+
+        function copyShopCode() {
+            const temp = document.createElement("input");
+            temp.value = currentShop.shopCode;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showToast(`দোকান কোড (${currentShop.shopCode}) কপি করা হয়েছে!`, "info");
+        }
+
+        // ==================== PRICE FIX VS UNFIX MODE ====================
+        function setPriceMode(mode, notify = true) {
+            currentShop.priceMode = mode;
+            saveShopData();
+
+            const btnFix = document.getElementById("btn-mode-fix");
+            const btnUnfix = document.getElementById("btn-mode-unfix");
+            const banner = document.getElementById("mode-banner");
+            const bannerText = document.getElementById("mode-banner-text");
+            const sellPriceInput = document.getElementById("sell-price");
+
+            if (mode === 'fix') {
+                btnFix.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow";
+                btnUnfix.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+                banner.className = "p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm flex items-center justify-between";
+                bannerText.innerHTML = `<strong>Price Fix মোড চালু আছে:</strong> আগে থেকে সেট করা নির্দিষ্ট দামে সরাসরি বিক্রি হবে।`;
+                if (selectedProduct) {
+                    sellPriceInput.value = selectedProduct.sellPrice;
+                    sellPriceInput.readOnly = true;
+                    sellPriceInput.classList.add("bg-slate-100");
+                }
+                if (notify) showToast("Price Fix (এক দর) মোড চালু হয়েছে", "info");
+            } else {
+                btnUnfix.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-amber-600 text-white shadow";
+                btnFix.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+                banner.className = "p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-center justify-between";
+                bannerText.innerHTML = `<strong>Unfix মোড চালু আছে:</strong> আপনি নিজে থেকে বিক্রির দাম বসাতে পারবেন (কেনা দামের কম হলে Warning দিবে)।`;
+                if (selectedProduct) {
+                    sellPriceInput.readOnly = false;
+                    sellPriceInput.classList.remove("bg-slate-100");
+                }
+                if (notify) showToast("Unfix (দামাদামি) মোড চালু হয়েছে", "info");
+            }
+            checkLossWarning();
+        }
+
+        // ==================== NAVIGATION TABS ====================
+        function switchTab(tabName) {
+            const sections = ['pos', 'inventory', 'analytics', 'alerts', 'summary'];
+            sections.forEach(s => {
+                document.getElementById("view-" + s).classList.add("hidden");
+                const btn = document.getElementById("nav-" + s);
+                btn.className = "nav-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap flex items-center gap-2";
+            });
+
+            document.getElementById("view-" + tabName).classList.remove("hidden");
+            const activeBtn = document.getElementById("nav-" + tabName);
+            activeBtn.className = "nav-btn px-4 py-2.5 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap flex items-center gap-2";
+
+            if (tabName === 'analytics') renderCharts();
+            if (tabName === 'summary') filterSummary('today');
+        }
+
+        // ==================== POS: PRODUCT SELECTION, SCAN & VOICE ====================
+        function filterPosProducts() {
+            const query = document.getElementById("pos-search-input").value.toLowerCase().trim();
+            const container = document.getElementById("pos-product-pills");
+            container.innerHTML = "";
+
+            const filtered = currentShop.products.filter(p => 
+                p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query)
+            );
+
+            filtered.forEach(p => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.onclick = () => selectProductForSale(p.id);
+                btn.className = `px-3 py-1.5 rounded-lg text-xs font-semibold border transition flex items-center gap-1.5 ${
+                    p.stock <= 0 ? 'bg-red-50 text-red-400 border-red-200 cursor-not-allowed' : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-300 shadow-xs'
+                }`;
+                btn.innerHTML = `<span>${p.icon}</span> <span>${p.name}</span> <span class="font-mono text-[10px] bg-slate-100 px-1 rounded">${p.code}</span>`;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectProductForSale(prodId) {
+            const prod = currentShop.products.find(p => p.id === prodId);
+            if (!prod) return;
+            if (prod.stock <= 0) {
+                showToast("দুঃখিত! এই প্রোডাক্টটির স্টক শেষ হয়ে গেছে।", "error");
+                return;
+            }
+
+            selectedProduct = prod;
+            document.getElementById("selected-product-box").classList.remove("hidden");
+            document.getElementById("sel-prod-icon").innerText = prod.icon;
+            document.getElementById("sel-prod-name").innerText = prod.name;
+            document.getElementById("sel-prod-code").innerText = prod.code;
+            document.getElementById("sel-prod-stock").innerText = prod.stock;
+            document.getElementById("sel-prod-buy").innerText = "৳ " + prod.buyPrice;
+
+            const sellInput = document.getElementById("sell-price");
+            sellInput.value = prod.sellPrice;
+            document.getElementById("sell-qty").value = 1;
+            document.getElementById("sell-qty").max = prod.stock;
+            document.getElementById("sell-expense").value = 0;
+
+            if (currentShop.priceMode === 'fix') {
+                sellInput.readOnly = true;
+                sellInput.classList.add("bg-slate-100");
+            } else {
+                sellInput.readOnly = false;
+                sellInput.classList.remove("bg-slate-100");
+            }
+            checkLossWarning();
+        }
+
+        // Check Loss Warning (From Note: কেনা দামে বা তার থেকে কমে বিক্রি করতে চায় তাহলে Warning দিবে)
+        function checkLossWarning() {
+            if (!selectedProduct) return;
+            const sellPrice = parseFloat(document.getElementById("sell-price").value) || 0;
+            const warnBox = document.getElementById("loss-warning-box");
+
+            if (sellPrice <= selectedProduct.buyPrice) {
+                warnBox.classList.remove("hidden");
+            } else {
+                warnBox.classList.add("hidden");
+            }
+        }
+
+        function confirmSale() {
+            if (!selectedProduct) return;
+            const qty = parseInt(document.getElementById("sell-qty").value) || 1;
+            const sellPrice = parseFloat(document.getElementById("sell-price").value) || 0;
+            const expense = parseFloat(document.getElementById("sell-expense").value) || 0;
+
+            if (qty > selectedProduct.stock) {
+                showToast("স্টকের চেয়ে বেশি পরিমাণ বিক্রি করা সম্ভব নয়!", "error");
+                return;
+            }
+            if (sellPrice <= 0) {
+                showToast("সঠিক বিক্রয় মূল্য দিন!", "error");
+                return;
+            }
+
+            // Deduct stock & update soldCount
+            selectedProduct.stock -= qty;
+            selectedProduct.soldCount += qty;
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const saleRecord = {
+                id: Date.now(),
+                pic: qty,
+                productName: selectedProduct.name,
+                code: selectedProduct.code,
+                buyPrice: selectedProduct.buyPrice,
+                sellPrice: sellPrice,
+                expense: expense,
+                time: timeStr,
+                date: now.toDateString()
+            };
+
+            currentShop.sales.unshift(saleRecord);
+            saveShopData();
+
+            // Notify if sold at loss/cost
+            if (sellPrice <= selectedProduct.buyPrice) {
+                showToast("সতর্কতা: পণ্যটি কেনা দাম বা লসে বিক্রি হয়েছে (লাল রঙে চিহ্নিত)!", "warning");
+            } else {
+                showToast("বিক্রি সফলভাবে তালিকায় যুক্ত হয়েছে!", "success");
+            }
+
+            document.getElementById("selected-product-box").classList.add("hidden");
+            selectedProduct = null;
+            refreshAllViews();
+        }
+
+        // Camera Scan Simulation (From Note: Scan option ক্লিক করলে ক্যামেরা ওপেন হবে এবং প্রোডাক্ট চিনে দাম দেখাবে)
+        function openScannerModal() {
+            let optionsHtml = currentShop.products.map(p => `
+                <button onclick="simulateScanResult(${p.id})" class="w-full p-3 rounded-xl border border-slate-200 hover:bg-indigo-50 flex items-center justify-between text-left transition">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${p.icon}</span>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">${p.name}</p>
+                            <p class="text-xs text-slate-500">Code: ${p.code} | স্টক: ${p.stock}</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-indigo-600 text-white text-xs font-bold rounded-lg">স্ক্যান করুন</span>
+                </button>
+            `).join("");
+
+            showModal(`
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-camera text-indigo-600"></i> প্রোডাক্ট ক্যামেরা স্ক্যানার
+                        </h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    <div class="relative h-44 bg-slate-900 rounded-2xl overflow-hidden flex flex-col items-center justify-center text-white border-2 border-indigo-500">
+                        <div class="w-48 h-28 border-2 border-emerald-400 rounded-xl relative flex items-center justify-center">
+                            <div class="w-full h-0.5 bg-red-500 animate-bounce"></div>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-2">ক্যামেরার সামনে প্রোডাক্ট ধরুন অথবা নিচে ট্যাপ করে স্ক্যান টেস্ট করুন:</p>
+                    </div>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `);
+        }
+
+        function simulateScanResult(prodId) {
+            closeModal();
+            selectProductForSale(prodId);
+            showToast("স্ক্যান সফল! প্রোডাক্ট ও নির্ধারিত দাম চলে এসেছে।", "success");
+        }
+
+        // Voice Recognition (From Note: Voice এ বলা যায় যাতে না লিখে Voice দিলেও চলে আসে)
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const voiceBtn = document.getElementById("voice-btn");
+
+            if (!SpeechRecognition) {
+                showToast("আপনার ব্রাউজারে সরাসরি ভয়েস সাপোর্ট নেই, সার্চ বক্সে লিখুন।", "warning");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'bn-BD'; // Supports Bengali & English product names
+            recognition.interimResults = false;
+
+            voiceBtn.classList.add("voice-pulse");
+            showToast("কথা বলুন... প্রোডাক্টের নাম বা কোড বলুন", "info");
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById("pos-search-input").value = transcript;
+                filterPosProducts();
+
+                // Auto select if close match
+                const match = currentShop.products.find(p => 
+                    p.name.toLowerCase().includes(transcript.toLowerCase()) || 
+                    p.code.toLowerCase().includes(transcript.toLowerCase())
+                );
+                if (match) {
+                    selectProductForSale(match.id);
+                    showToast(`ভয়েস শনাক্ত হয়েছে: "${match.name}"`, "success");
+                } else {
+                    showToast(`আপনি বলেছেন: "${transcript}"`, "info");
+                }
+            };
+
+            recognition.onerror = function() {
+                showToast("ভয়েস বুঝতে সমস্যা হয়েছে, আবার চেষ্টা করুন।", "error");
+            };
+
+            recognition.onend = function() {
+                voiceBtn.classList.remove("voice-pulse");
+            };
+
+            recognition.start();
+        }
+
+        // ==================== SALES TABLE & PIN DELETE ====================
+        function renderSalesTable() {
+            const tbody = document.getElementById("sales-table-body");
+            tbody.innerHTML = "";
+
+            if (currentShop.sales.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">এখনো কোনো প্রোডাক্ট বিক্রি হয়নি।</td></tr>`;
+                return;
+            }
+
+            currentShop.sales.forEach(sale => {
+                const totalBuy = sale.buyPrice * sale.pic;
+                const totalSell = sale.sellPrice * sale.pic;
+                const netProfitLoss = totalSell - totalBuy - (sale.expense || 0);
+                const isLossOrCost = sale.sellPrice <= sale.buyPrice;
+
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-2.5 border-r border-slate-100 font-bold text-center">${sale.pic}</td>
+                    <td class="p-2.5 border-r border-slate-100 font-semibold text-slate-800">${sale.productName}</td>
+                    <td class="p-2.5 border-r border-slate-100">
+                        <button onclick="openProductDetailByCode('${sale.code}')" class="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white font-mono font-bold rounded border border-indigo-200 transition text-xs" title="বিস্তারিত চার্ট ও ছবি দেখতে ক্লিক করুন">
+                            ${sale.code}
+                        </button>
+                    </td>
+                    <td class="p-2.5 border-r border-slate-100 font-mono text-slate-600">৳${sale.buyPrice}</td>
+                    <td class="p-2.5 border-r border-slate-100 font-mono font-bold ${isLossOrCost ? 'text-red-600 bg-red-50' : 'text-slate-900'}">
+                        ৳${sale.sellPrice}
+                    </td>
+                    <td class="p-2.5 border-r border-slate-100 font-mono font-bold ${netProfitLoss < 0 ? 'text-red-600' : 'text-emerald-600'}">
+                        ${netProfitLoss >= 0 ? '+' : ''}৳${netProfitLoss}
+                    </td>
+                    <td class="p-2.5 border-r border-slate-100 font-mono text-slate-500">৳${sale.expense || 0}</td>
+                    <td class="p-2.5 border-r border-slate-100 text-xs text-slate-500 whitespace-nowrap">${sale.time}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="promptPinToDelete(${sale.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="পিন দিয়ে ডিলিট করুন">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Delete Wrong Sale with Separate PIN (From Note: ভুলকরে sold করলে remove করতে আলাদা Pin থাকবে)
+        function promptPinToDelete(saleId) {
+            showModal(`
+                <div class="space-y-4 text-center">
+                    <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full mx-auto flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-900">ভুল বিক্রি ডিলিট করুন</h3>
+                    <p class="text-xs text-slate-500">তালিকা থেকে এই এন্ট্রি রিমুভ করতে আপনার ৪ সংখ্যার সিকিউরিটি পিন দিন:</p>
+                    <input type="password" id="verify-delete-pin" maxlength="4" placeholder="****" class="w-40 mx-auto block px-4 py-2.5 text-center text-xl font-mono tracking-widest rounded-xl border border-slate-300 focus:border-red-500 outline-none">
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl">বাতিল</button>
+                        <button onclick="confirmDeleteWithPin(${saleId})" class="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl shadow">ডিলিট করুন</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function confirmDeleteWithPin(saleId) {
+            const enteredPin = document.getElementById("verify-delete-pin").value;
+            if (enteredPin !== currentShop.pin) {
+                showToast("ভুল পিন! এন্ট্রি ডিলিট করা সম্ভব হয়নি।", "error");
+                return;
+            }
+
+            const saleIndex = currentShop.sales.findIndex(s => s.id === saleId);
+            if (saleIndex > -1) {
+                const sale = currentShop.sales[saleIndex];
+                // Restore stock
+                const prod = currentShop.products.find(p => p.code === sale.code);
+                if (prod) {
+                    prod.stock += sale.pic;
+                    prod.soldCount = Math.max(0, prod.soldCount - sale.pic);
+                }
+                currentShop.sales.splice(saleIndex, 1);
+                saveShopData();
+                closeModal();
+                refreshAllViews();
+                showToast("পিন যাচাই সফল! এন্ট্রি রিমুভ ও স্টক ফেরত দেওয়া হয়েছে।", "success");
+            }
+        }
+
+        // Click Code to View Product Image, Stock, Sold Count & Popularity Chart
+        function openProductDetailByCode(code) {
+            const prod = currentShop.products.find(p => p.code === code);
+            if (!prod) return;
+
+            const totalAllSold = currentShop.products.reduce((acc, item) => acc + item.soldCount, 0) || 1;
+            const popularityPercent = Math.round((prod.soldCount / totalAllSold) * 100);
+
+            showModal(`
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <span class="px-2.5 py-1 bg-indigo-100 text-indigo-800 font-mono font-bold rounded-lg text-xs">Code: ${prod.code}</span>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-100 border border-slate-200 flex items-center justify-center text-5xl shadow-inner">
+                            ${prod.icon}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl text-slate-900">${prod.name}</h3>
+                            <p class="text-xs text-slate-500 mt-1">কেনা দাম: <strong>৳${prod.buyPrice}</strong> | বিক্রি দাম: <strong>৳${prod.sellPrice}</strong></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                            <span class="text-xs text-emerald-700 font-semibold block">বর্তমান স্টক আছে</span>
+                            <span class="text-2xl font-bold text-emerald-800">${prod.stock} পিচ</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-center">
+                            <span class="text-xs text-indigo-700 font-semibold block">মোট বিক্রি হয়েছে</span>
+                            <span class="text-2xl font-bold text-indigo-800">${prod.soldCount} পিচ</span>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-slate-600">বিক্রির জনপ্রিয়তা (Popularity Chart)</span>
+                            <span class="text-indigo-600">${popularityPercent}%</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full" style="width: ${popularityPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        // ==================== INVENTORY MANAGEMENT ====================
+        function handleAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById("new-prod-name").value.trim();
+            const code = document.getElementById("new-prod-code").value.trim().toUpperCase();
+            const stock = parseInt(document.getElementById("new-prod-stock").value);
+            const buyPrice = parseFloat(document.getElementById("new-prod-buy").value);
+            const sellPrice = parseFloat(document.getElementById("new-prod-sell").value);
+            const icon = document.getElementById("new-prod-icon").value;
+
+            if (currentShop.products.some(p => p.code === code)) {
+                showToast("এই কোডটি ইতিমধ্যে ব্যবহৃত হয়েছে! অন্য কোড দিন।", "error");
+                return;
+            }
+
+            currentShop.products.push({
+                id: Date.now(),
+                code,
+                name,
+                buyPrice,
+                sellPrice,
+                stock,
+                soldCount: 0,
+                icon
+            });
+
+            saveShopData();
+            e.target.reset();
+            refreshAllViews();
+            showToast("নতুন প্রোডাক্
